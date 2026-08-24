@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/ConnorBrightman/termchess/internal/chess"
+)
 
 func main() {
-	fmt.Println("Hello World!")
+	chess.Chess()
 }

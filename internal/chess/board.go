@@ -29,7 +29,7 @@ func StartPosition() Board {
 func (b Board) String() string {
 	str := ""
 	for i := 7; i >= 0; i-- {
-		str += fmt.Sprintf("\n")
+		str += "\n"
 		for j := 0; j < 8; j++ {
 			str += fmt.Sprintf("%v", b.Squares[i][j])
 		}

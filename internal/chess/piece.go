@@ -30,6 +30,14 @@ func (p Piece) PieceType() PieceType {
 	return p.pType
 }
 
+func (p Piece) PieceColour() Colour {
+	return p.pColour
+}
+
+func (p Piece) IsEmpty() bool {
+	return p.pType == Empty
+}
+
 func (p Piece) String() string {
 	str := ""
 	if p.pType == Empty {
@@ -49,7 +57,7 @@ func (p Piece) String() string {
 	case King:
 		str = "K"
 	}
-	if p.pColour == black {
+	if p.pColour == Black {
 		str = strings.ToLower(str)
 	}
 

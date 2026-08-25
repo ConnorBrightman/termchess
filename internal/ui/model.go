@@ -86,10 +86,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() tea.View {
 	// The header
 	s := "Welcome to TermChess\n"
-
+	// render board
 	for r := chess.Rank(7); r >= 0; r-- {
 		for f := chess.File(0); f < 8; f++ {
 			sq := chess.Square{Rank: r, File: f}
+
+			// render square
 			if sq == m.selected && m.hasSelection {
 				s += fmt.Sprintf("(%v)", m.board.PieceAt(sq))
 			} else if sq == m.cursor {

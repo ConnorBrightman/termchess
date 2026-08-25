@@ -9,11 +9,11 @@ func TestMakeMove(t *testing.T) {
 	m := Move{Square{Rank2, FileE}, Square{Rank4, FileE}}
 	after := b.MakeMove(m)
 
-	want := makePiece(pawn, white)
+	want := makePiece(Pawn, white)
 	if got := after.PieceAt(Square{Rank4, FileE}); got != want {
 		t.Errorf("e4 = %v, want %v", got, want)
 	}
-	want = makePiece(empty, black)
+	want = makePiece(Empty, black)
 	if got := after.PieceAt(Square{Rank2, FileE}); got != want {
 		t.Errorf("e2 = %v, want %v", got, want)
 	}

@@ -5,13 +5,13 @@ import "strings"
 type PieceType uint8
 
 const (
-	empty PieceType = iota
-	pawn
-	knight
-	bishop
-	rook
-	queen
-	king
+	Empty PieceType = iota
+	Pawn
+	Knight
+	Bishop
+	Rook
+	Queen
+	King
 )
 
 type Piece struct {
@@ -26,23 +26,27 @@ func makePiece(pt PieceType, pc Colour) Piece {
 	return p
 }
 
+func (p Piece) PieceType() PieceType {
+	return p.pType
+}
+
 func (p Piece) String() string {
 	str := ""
-	if p.pType == empty {
+	if p.pType == Empty {
 		return "."
 	}
 	switch p.pType {
-	case pawn:
+	case Pawn:
 		str = "P"
-	case knight:
+	case Knight:
 		str = "N"
-	case bishop:
+	case Bishop:
 		str = "B"
-	case rook:
+	case Rook:
 		str = "R"
-	case queen:
+	case Queen:
 		str = "Q"
-	case king:
+	case King:
 		str = "K"
 	}
 	if p.pColour == black {

@@ -9,13 +9,16 @@ import (
 )
 
 type model struct {
-	board  chess.Board
-	cursor chess.Square
+	board        chess.Board
+	cursor       chess.Square
+	selected     chess.Square
+	hasSelection bool
 }
 
 func initialModel() model {
 	return model{
-		board: chess.StartPosition(),
+		board:        chess.StartPosition(),
+		hasSelection: false,
 	}
 }
 
@@ -54,6 +57,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.cursor.File = 0
 			}
+		case "space", "enter":
+			sq := m.cursor
+			pt := m.board.PieceAt(sq).PieceType()
+			if !m.hasSelection {
+				if pt == chess.Empty {
+					break
+				} else {
+					m.selected = sq
+					m.hasSelection = true
+				}
+			} else if sq == m.selected {
+				m.hasSelection = false
+			} else {
+				mv := chess.Move{From: m.selected, To: sq}
+				m.board = m.board.MakeMove(mv)
+				m.hasSelection = false
+			}
+		case "backspace":
+			if m.hasSelection {
+				m.hasSelection = false
+			}
 		}
 	}
 	return m, nil
@@ -66,7 +90,9 @@ func (m model) View() tea.View {
 	for r := chess.Rank(7); r >= 0; r-- {
 		for f := chess.File(0); f < 8; f++ {
 			sq := chess.Square{Rank: r, File: f}
-			if sq == m.cursor {
+			if sq == m.selected && m.hasSelection {
+				s += fmt.Sprintf("(%v)", m.board.PieceAt(sq))
+			} else if sq == m.cursor {
 				s += fmt.Sprintf("[%v]", m.board.PieceAt(sq))
 			} else {
 				s += fmt.Sprintf(" %v ", m.board.PieceAt(sq))
@@ -74,6 +100,7 @@ func (m model) View() tea.View {
 		}
 		s += "\n"
 	}
+
 	// The footer
 	s += "\nPress q to quit.\n"
 

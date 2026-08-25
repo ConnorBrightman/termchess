@@ -22,15 +22,15 @@ func (b Board) PieceAt(s Square) Piece {
 func StartPosition() Board {
 	var b Board
 	backRank := []PieceType{
-		rook, knight, bishop, queen, king, bishop, knight, rook,
+		Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook,
 	}
 	for i := 0; i < 8; i++ {
 		b.squares[0][i] = makePiece(backRank[i], white)
-		b.squares[1][i] = makePiece(pawn, white)
+		b.squares[1][i] = makePiece(Pawn, white)
 	}
 	for i := 7; i >= 0; i-- {
 		b.squares[7][i] = makePiece(backRank[i], black)
-		b.squares[6][i] = makePiece(pawn, black)
+		b.squares[6][i] = makePiece(Pawn, black)
 	}
 	return b
 }
@@ -50,7 +50,7 @@ func (b Board) String() string {
 func (b Board) MakeMove(m Move) Board {
 	from := b.squares[m.From.Rank][m.From.File]
 	b.squares[m.To.Rank][m.To.File] = from
-	b.squares[m.From.Rank][m.From.File] = makePiece(empty, black)
+	b.squares[m.From.Rank][m.From.File] = makePiece(Empty, black)
 
 	return b
 }

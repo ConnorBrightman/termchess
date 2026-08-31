@@ -32,3 +32,17 @@ const (
 	FileG
 	FileH
 )
+
+func (c Colour) String() string {
+	if c == White {
+		return "White"
+	}
+	return "Black"
+}
+
+func (c Colour) Opponent() Colour {
+	if c == White {
+		return Black
+	}
+	return White
+}

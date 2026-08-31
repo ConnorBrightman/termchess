@@ -12,6 +12,9 @@ type Board struct {
 
 // PieceAt returns the [Piece] at a square
 func (b Board) PieceAt(s Square) Piece {
+	if !s.Valid() {
+		return makePiece(Empty, Black)
+	}
 	return b.squares[s.Rank][s.File]
 }
 
@@ -60,6 +63,8 @@ func (b Board) Moves(from Square) []Square {
 	p := b.PieceAt(from)
 
 	switch p.PieceType() {
+	case Pawn:
+		moves = b.pawnMoves(from)
 	case Knight:
 		moves = b.baseMoves(knightOffsets[:], from)
 	case King:
@@ -111,6 +116,43 @@ func (b Board) slideMoves(offsets []offset, from Square) []Square {
 			break
 		}
 	}
+	return moves
+}
+
+func (b Board) pawnMoves(from Square) []Square {
+	moves := []Square{}
+	p := b.PieceAt(from)
+	pColor := p.PieceColour()
+	dir := Rank(1)
+	if pColor == Black {
+		dir = -1
+	}
+	isFirstMove := (from.Rank == Rank2 && pColor == White) || (from.Rank == Rank7 && pColor == Black)
+
+	one := Square{from.Rank + dir, from.File}
+	dst := b.PieceAt(one)
+	if one.Valid() && dst.IsEmpty() {
+		moves = append(moves, one)
+		if isFirstMove {
+			two := Square{from.Rank + 2*dir, from.File}
+			dst = b.PieceAt(two)
+			if two.Valid() && dst.IsEmpty() {
+				moves = append(moves, two)
+			}
+		}
+	}
+
+	// capture moves
+	dirs := []File{1, -1}
+	for _, d := range dirs {
+		to := Square{from.Rank + dir, from.File + d}
+		dst := b.PieceAt(to)
+		if !to.Valid() || dst.IsEmpty() || dst.PieceColour() == pColor {
+			continue
+		}
+		moves = append(moves, to)
+	}
+
 	return moves
 }
 

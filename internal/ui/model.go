@@ -100,31 +100,8 @@ func (m model) View() tea.View {
 	// The header
 	s := "Welcome to TermChess\n"
 	s += fmt.Sprintf("%v to move\n", m.turn)
-	legal := map[chess.Square]bool{}
-	if m.hasSelection {
-		for _, dest := range m.board.Moves(m.selected) {
-			legal[dest] = true
-		}
-	}
-	// render board
-	for r := chess.Rank(7); r >= 0; r-- {
-		for f := chess.File(0); f < 8; f++ {
-			sq := chess.Square{Rank: r, File: f}
 
-			// render squares
-			// selected piece square
-			if sq == m.selected && m.hasSelection {
-				s += fmt.Sprintf("(%v)", m.board.PieceAt(sq))
-			} else if sq == m.cursor {
-				s += fmt.Sprintf("[%v]", m.board.PieceAt(sq))
-			} else if legal[sq] {
-				s += fmt.Sprintf("{%v}", m.board.PieceAt(sq))
-			} else {
-				s += fmt.Sprintf(" %v ", m.board.PieceAt(sq))
-			}
-		}
-		s += "\n"
-	}
+	s += renderBoard(m)
 
 	// The footer
 	s += "\nPress q to quit.\n"
@@ -139,3 +116,81 @@ func Run() error {
 
 	return err
 }
+
+func renderBoard(m model) string {
+	s := ""
+	legal := map[chess.Square]bool{}
+	if m.hasSelection {
+		for _, dest := range m.board.Moves(m.selected) {
+			legal[dest] = true
+		}
+	}
+	colNotation := "  " + columnNotation
+	s += colNotation
+	s += "\n"
+	// render board
+	for r := chess.Rank(7); r >= 0; r-- {
+		s += fmt.Sprintf("%v ", r)
+
+		for f := chess.File(0); f < 8; f++ {
+			sq := chess.Square{Rank: r, File: f}
+			dark := (int(sq.Rank)+int(sq.File))%2 == 0
+			p := m.board.PieceAt(sq)
+			empty := (p.PieceType() == chess.Empty)
+
+			ps := p.String()
+
+			if empty {
+				if dark {
+					ps = sqDarkEmpty
+				} else {
+					ps = sqLightEmpty
+				}
+			}
+			// render squares
+			// selected piece square
+			t := sqLight
+			switch {
+			case m.hasSelection && sq == m.selected:
+				t = sqSelected
+			case sq == m.cursor:
+				t = sqCursor
+			case legal[sq]:
+				t = sqLegal
+			case dark:
+				t = sqDark
+			}
+			ch := squareChars[t]
+
+			s += ch.open + ps + ch.close
+		}
+		s += fmt.Sprintf(" %v", r)
+		s += "\n"
+	}
+	s += colNotation
+	return s
+}
+
+var columnNotation string = " a  b  c  d  e  f  g  h "
+
+type SQType int
+
+const (
+	sqCursor SQType = iota
+	sqLegal
+	sqSelected
+	sqLight
+	sqDark
+)
+
+var (
+	sqDarkEmpty  string = " "
+	sqLightEmpty string = "#"
+	squareChars         = map[SQType]struct{ open, close string }{
+		sqCursor:   {"<", ">"},
+		sqSelected: {"(", ")"},
+		sqLegal:    {"{", "}"},
+		sqLight:    {"[", "]"},
+		sqDark:     {":", ":"},
+	}
+)

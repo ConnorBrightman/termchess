@@ -126,7 +126,7 @@ func TestKingMoves(t *testing.T) {
 		{
 			"enemy piece is a capture",
 			place(map[string]Piece{"d4": wKing, "d5": bPawn}), "d4",
-			"c3 c4 c5 d3 d5 e3 e4 e5",
+			"c3 c5 d3 d5 e3 e5",
 		},
 	})
 }

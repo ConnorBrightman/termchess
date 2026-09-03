@@ -19,6 +19,32 @@ type Piece struct {
 	pColour Colour
 }
 
+type pieceRules struct {
+	offsets []offset
+	slides  bool
+}
+
+var rules = map[PieceType]pieceRules{
+	Knight: {knightOffsets[:], false},
+	King:   {kingOffsets[:], false},
+	Rook:   {rookDirs[:], true},
+	Bishop: {bishopDirs[:], true},
+	Queen:  {queenDirs[:], true},
+}
+
+type offset struct {
+	dR Rank
+	dF File
+}
+
+var (
+	knightOffsets = [...]offset{{1, 2}, {2, 1}, {1, -2}, {-2, 1}, {-1, 2}, {2, -1}, {-1, -2}, {-2, -1}}
+	kingOffsets   = [...]offset{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
+	rookDirs      = [...]offset{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
+	bishopDirs    = [...]offset{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
+	queenDirs     = [...]offset{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
+)
+
 func makePiece(pt PieceType, pc Colour) Piece {
 	p := Piece{
 		pType: pt, pColour: pc,

@@ -59,34 +59,73 @@ func (b Board) MakeMove(m Move) Board {
 
 // Moves returns the valid squares a piece can move to
 func (b Board) Moves(from Square) []Square {
-	moves := []Square{}
-	p := b.PieceAt(from)
-
-	switch p.PieceType() {
-	case Pawn:
-		moves = b.pawnMoves(from)
-	case Knight:
-		moves = b.baseMoves(knightOffsets[:], from)
-	case King:
-		moves = b.baseMoves(kingOffsets[:], from)
-	case Rook:
-		moves = b.slideMoves(rookDirs[:], from)
-	case Bishop:
-		moves = b.slideMoves(bishopDirs[:], from)
-	case Queen:
-		moves = b.slideMoves(queenDirs[:], from)
+	mvs := []Square{}
+	me := b.PieceAt(from).PieceColour()
+	for _, to := range b.pseudoMoves(from) {
+		after := b.MakeMove(Move{from, to})
+		if !after.IsAttacked(after.kingSquare(me), me.Opponent()) {
+			mvs = append(mvs, to)
+		}
 	}
-	return moves
+	return mvs
 }
 
-func (b Board) baseMoves(offsets []offset, from Square) []Square {
+func (b Board) kingSquare(colour Colour) Square {
+	for r := Rank(0); r < 8; r++ {
+		for f := File(0); f < 8; f++ {
+			sq := Square{r, f}
+			if b.PieceAt(sq).PieceType() == King && b.PieceAt(sq).PieceColour() == colour {
+				return sq
+			}
+		}
+	}
+	// needs changing to be safer at some point
+	return Square{9, 9}
+}
+
+// returns the valid squares a piece can move to
+func (b Board) pseudoMoves(from Square) []Square {
+	if b.PieceAt(from).PieceType() == Pawn {
+		return b.pawnMoves(from)
+	}
+	return b.generate(from, captureMove)
+}
+
+// returns the squares a Piece controls
+func (b Board) attacks(from Square) []Square {
+	if b.PieceAt(from).PieceType() == Pawn {
+		return b.pawnAttacks(from)
+	}
+	return b.generate(from, attackMove)
+}
+
+func (b Board) pawnAttacks(from Square) []Square {
+	attacks := []Square{}
+	p := b.PieceAt(from)
+	pColor := p.PieceColour()
+	dir := Rank(1)
+	if pColor == Black {
+		dir = -1
+	}
+	sides := []int{1, -1}
+	for _, side := range sides {
+		to := Square{from.Rank + dir, from.File + File(side)}
+		if to.Valid() {
+			attacks = append(attacks, to)
+		}
+	}
+
+	return attacks
+}
+
+func (b Board) baseMoves(offsets []offset, from Square, mvType MoveType) []Square {
 	moves := []Square{}
 	p := b.PieceAt(from)
 	for _, o := range offsets {
 		to := Square{from.Rank + o.dR, from.File + o.dF}
 		if to.Valid() {
 			dst := b.PieceAt(to)
-			if !dst.IsEmpty() && dst.PieceColour() == p.PieceColour() {
+			if !mvType.IncludeOwn && !dst.IsEmpty() && dst.PieceColour() == p.PieceColour() {
 				continue
 			}
 			moves = append(moves, to)
@@ -95,9 +134,10 @@ func (b Board) baseMoves(offsets []offset, from Square) []Square {
 	return moves
 }
 
-func (b Board) slideMoves(offsets []offset, from Square) []Square {
+func (b Board) slideMoves(offsets []offset, from Square, mvType MoveType) []Square {
 	moves := []Square{}
 	p := b.PieceAt(from)
+	incOwn := mvType.IncludeOwn
 	for _, d := range offsets {
 		to := from
 		for {
@@ -110,7 +150,7 @@ func (b Board) slideMoves(offsets []offset, from Square) []Square {
 				moves = append(moves, to)
 				continue
 			}
-			if dst.PieceColour() != p.PieceColour() {
+			if incOwn || dst.PieceColour() != p.PieceColour() {
 				moves = append(moves, to)
 			}
 			break
@@ -156,15 +196,34 @@ func (b Board) pawnMoves(from Square) []Square {
 	return moves
 }
 
-type offset struct {
-	dR Rank
-	dF File
+func (b Board) IsAttacked(sq Square, by Colour) bool {
+	for r := Rank(0); r < 8; r++ {
+		for f := File(0); f < 8; f++ {
+			from := Square{r, f}
+			p := b.PieceAt(from)
+			pt := p.PieceType()
+			pc := p.PieceColour()
+			// if the attacking square is not empty and is of a different colour
+			// check to see if sq is attacked
+			if pt != Empty && pc == by {
+				for _, mv := range b.attacks(from) {
+					if sq == mv {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
-var (
-	knightOffsets = [...]offset{{1, 2}, {2, 1}, {1, -2}, {-2, 1}, {-1, 2}, {2, -1}, {-1, -2}, {-2, -1}}
-	kingOffsets   = [...]offset{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
-	rookDirs      = [...]offset{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
-	bishopDirs    = [...]offset{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
-	queenDirs     = [...]offset{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
-)
+func (b Board) generate(from Square, mvType MoveType) []Square {
+	r, ok := rules[b.PieceAt(from).PieceType()]
+	if !ok {
+		return nil // Empty, or Pawn — handled by the caller
+	}
+	if r.slides {
+		return b.slideMoves(r.offsets, from, mvType)
+	}
+	return b.baseMoves(r.offsets, from, mvType)
+}

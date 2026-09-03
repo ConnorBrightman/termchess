@@ -184,13 +184,13 @@ const (
 )
 
 var (
-	sqDarkEmpty  string = " "
+	sqDarkEmpty  string = "."
 	sqLightEmpty string = "#"
 	squareChars         = map[SQType]struct{ open, close string }{
 		sqCursor:   {"<", ">"},
 		sqSelected: {"(", ")"},
 		sqLegal:    {"{", "}"},
 		sqLight:    {"[", "]"},
-		sqDark:     {":", ":"},
+		sqDark:     {" ", " "},
 	}
 )

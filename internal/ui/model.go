@@ -16,6 +16,10 @@ type model struct {
 	hasSelection bool
 	turn         chess.Colour
 	message      string
+	themeNo      int
+	theme        pallette
+	glyphs       glyphSet
+	pieces       pieceStyle
 }
 
 func initialModel() model {
@@ -23,6 +27,10 @@ func initialModel() model {
 		board:        chess.StartPosition(),
 		hasSelection: false,
 		turn:         chess.White,
+		themeNo:      0,
+		theme:        themes[0],
+		glyphs:       glyphTypes["notation"],
+		pieces:       pieceStyles["notation-matched"],
 	}
 }
 
@@ -38,25 +46,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
-		case "up", "k":
+		case "t":
+			m.nextTheme()
+		case "up", "k", "w":
 			if m.cursor.Rank < 7 {
 				m.cursor.Rank++
 			} else {
 				m.cursor.Rank = 0
 			}
-		case "down", "j":
+		case "down", "j", "s":
 			if m.cursor.Rank > 0 {
 				m.cursor.Rank--
 			} else {
 				m.cursor.Rank = 7
 			}
-		case "left", "h":
+		case "left", "h", "a":
 			if m.cursor.File > 0 {
 				m.cursor.File--
 			} else {
 				m.cursor.File = 7
 			}
-		case "right", "l":
+		case "right", "l", "d":
 			if m.cursor.File < 7 {
 				m.cursor.File++
 			} else {
@@ -74,8 +84,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() tea.View {
+
 	// The header
 	s := "Welcome to TermChess\n"
+
+	s += fmt.Sprintf("Theme [%s]\n", m.theme.name)
 
 	switch {
 	case m.board.IsCheckmate(m.turn):
@@ -114,45 +127,73 @@ func renderBoard(m model) string {
 			legal[dest] = true
 		}
 	}
+	// top column notation
 	colNotation := "  " + columnNotation
 	s += colNotation
 	s += "\n"
+
 	// render board
 	for r := chess.Rank(7); r >= 0; r-- {
+		// add row notation tp start
 		s += fmt.Sprintf("%v ", r)
 
 		for f := chess.File(0); f < 8; f++ {
+
 			sq := chess.Square{Rank: r, File: f}
 			dark := (int(sq.Rank)+int(sq.File))%2 == 0
 			p := m.board.PieceAt(sq)
 			empty := (p.PieceType() == chess.Empty)
 
-			ps := p.String()
+			pc := p.PieceColour()
+			ps := m.setPieceLooks(p)
+
+			var glyph string
+			var col colour
 
 			if empty {
 				if dark {
-					ps = sqDarkEmpty
+					glyph = m.glyphs.sqDarkEmpty
+					col = m.theme.darkSquare
 				} else {
-					ps = sqLightEmpty
+					glyph = m.glyphs.sqLightEmpty
+					col = m.theme.lightSquare
+				}
+			} else {
+				glyph = ps
+				if pc == chess.Black {
+					col = m.theme.blackPiece
+				} else {
+					col = m.theme.whitePiece
 				}
 			}
+			ps = col.paint(glyph, fg)
+
 			// render squares
 			// selected piece square
-			t := sqLight
+			var sqGlyph SQType
+			var sqColour colour
+			var paintType colourType = fg
 			switch {
-			case m.hasSelection && sq == m.selected:
-				t = sqSelected
 			case sq == m.cursor:
-				t = sqCursor
+				sqGlyph = sqCursor
+				sqColour = m.theme.cursor
+			case m.hasSelection && sq == m.selected:
+				sqGlyph = sqSelected
+				sqColour = m.theme.selected
 			case legal[sq]:
-				t = sqLegal
+				sqGlyph = sqLegal
+				sqColour = m.theme.legalMove
 			case dark:
-				t = sqDark
+				sqGlyph = sqDark
+				sqColour = m.theme.darkSquare
+			default:
+				sqGlyph = sqLight
+				sqColour = m.theme.lightSquare
 			}
-			ch := squareChars[t]
-
-			s += ch.open + ps + ch.close
+			ch := m.glyphs.squareChars[sqGlyph]
+			s += sqColour.paint(ch.open, paintType) + ps + sqColour.paint(ch.close, paintType)
 		}
+		// add row notation to end
 		s += fmt.Sprintf(" %v", r)
 		s += "\n"
 	}
@@ -161,28 +202,6 @@ func renderBoard(m model) string {
 }
 
 var columnNotation string = " a  b  c  d  e  f  g  h "
-
-type SQType int
-
-const (
-	sqCursor SQType = iota
-	sqLegal
-	sqSelected
-	sqLight
-	sqDark
-)
-
-var (
-	sqDarkEmpty  string = "."
-	sqLightEmpty string = "#"
-	squareChars         = map[SQType]struct{ open, close string }{
-		sqCursor:   {"<", ">"},
-		sqSelected: {"(", ")"},
-		sqLegal:    {"{", "}"},
-		sqLight:    {"[", "]"},
-		sqDark:     {" ", " "},
-	}
-)
 
 func (m *model) handleSelection() {
 	sq := m.cursor
@@ -216,5 +235,49 @@ func (m *model) handleSelection() {
 		m.turn = m.turn.Opponent()
 	} else {
 		m.message = "Not a valid move"
+	}
+}
+
+func (m model) setPieceLooks(p chess.Piece) string {
+	ps := p.String()
+	switch ps {
+	case "P":
+		ps = m.pieces.wPawn
+	case "N":
+		ps = m.pieces.wKnight
+	case "B":
+		ps = m.pieces.wBishop
+	case "R":
+		ps = m.pieces.wRook
+	case "Q":
+		ps = m.pieces.wQueen
+	case "K":
+		ps = m.pieces.wKing
+	case "p":
+		ps = m.pieces.bPawn
+	case "n":
+		ps = m.pieces.bKnight
+	case "b":
+		ps = m.pieces.bBishop
+	case "r":
+		ps = m.pieces.bRook
+	case "q":
+		ps = m.pieces.bQueen
+	case "k":
+		ps = m.pieces.bKing
+	}
+	return ps
+}
+
+func (m *model) setTheme(i int) {
+	m.themeNo = i
+	m.theme = themes[m.themeNo]
+}
+func (m *model) nextTheme() {
+	i := m.themeNo + 1
+	if i < len(themes) {
+		m.setTheme(i)
+	} else {
+		m.setTheme(0)
 	}
 }

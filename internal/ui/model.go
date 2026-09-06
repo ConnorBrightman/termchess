@@ -15,6 +15,7 @@ type model struct {
 	selected     chess.Square
 	hasSelection bool
 	turn         chess.Colour
+	message      string
 }
 
 func initialModel() model {
@@ -33,6 +34,7 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
+		m.message = ""
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -61,32 +63,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor.File = 0
 			}
 		case "space", "enter":
-			sq := m.cursor
-			p := m.board.PieceAt(sq)
-			pt := p.PieceType()
-			pc := p.PieceColour()
-
-			if !m.hasSelection {
-				if pc != m.turn {
-					break
-				}
-				if pt == chess.Empty {
-					break
-				} else {
-					m.selected = sq
-					m.hasSelection = true
-				}
-			} else if sq == m.selected {
-				m.hasSelection = false
-			} else {
-				mv := chess.Move{From: m.selected, To: sq}
-				if slices.Contains(m.board.Moves(m.selected), m.cursor) {
-					m.board = m.board.MakeMove(mv)
-					m.hasSelection = false
-					m.turn = m.turn.Opponent()
-				}
-			}
-
+			m.handleSelection()
 		case "backspace":
 			if m.hasSelection {
 				m.hasSelection = false
@@ -99,9 +76,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() tea.View {
 	// The header
 	s := "Welcome to TermChess\n"
-	s += fmt.Sprintf("%v to move\n", m.turn)
+
+	switch {
+	case m.board.IsCheckmate(m.turn):
+		s += fmt.Sprintf("Checkmate — %v wins\n", m.turn.Opponent())
+	case m.board.IsStalemate(m.turn):
+		s += "Stalemate — draw\n"
+	case m.board.IsCheck(m.turn):
+		s += fmt.Sprintf("%v to move — CHECK\n", m.turn)
+	default:
+		s += fmt.Sprintf("%v to move\n", m.turn)
+	}
 
 	s += renderBoard(m)
+
+	s += fmt.Sprintf("\n%s", m.message)
 
 	// The footer
 	s += "\nPress q to quit.\n"
@@ -194,3 +183,38 @@ var (
 		sqDark:     {" ", " "},
 	}
 )
+
+func (m *model) handleSelection() {
+	sq := m.cursor
+	p := m.board.PieceAt(sq)
+	pt := p.PieceType()
+	pc := p.PieceColour()
+
+	// if there isn't a selected square already
+	if !m.hasSelection {
+		// not your piece
+		if pt == chess.Empty || pc != m.turn {
+			m.message = "Not your piece"
+			return
+		}
+		// is your piece
+		m.selected = sq
+		m.hasSelection = true
+		return
+	}
+	// if the square is already selected
+	if sq == m.selected {
+		m.hasSelection = false
+		return
+	}
+	// if you have selected a valid piece move it to the new square
+	mv := chess.Move{From: m.selected, To: sq}
+	// if the cusror is on a valid move square
+	if slices.Contains(m.board.Moves(m.selected), m.cursor) {
+		m.board = m.board.MakeMove(mv)
+		m.hasSelection = false
+		m.turn = m.turn.Opponent()
+	} else {
+		m.message = "Not a valid move"
+	}
+}

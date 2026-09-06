@@ -70,6 +70,7 @@ func (b Board) Moves(from Square) []Square {
 	return mvs
 }
 
+// returns the square a king is on based on colour
 func (b Board) kingSquare(colour Colour) Square {
 	for r := Rank(0); r < 8; r++ {
 		for f := File(0); f < 8; f++ {
@@ -226,4 +227,33 @@ func (b Board) generate(from Square, mvType MoveType) []Square {
 		return b.slideMoves(r.offsets, from, mvType)
 	}
 	return b.baseMoves(r.offsets, from, mvType)
+}
+
+func (b Board) hasLegalMoves(c Colour) bool {
+	for r := Rank(0); r < 8; r++ {
+		for f := File(0); f < 8; f++ {
+			from := Square{r, f}
+			p := b.PieceAt(from)
+			if p.PieceColour() != c || p.PieceType() == Empty {
+				continue
+			}
+			if len(b.Moves(from)) > 0 {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (b Board) IsCheck(c Colour) bool {
+	return b.IsAttacked(b.kingSquare(c), c.Opponent())
+}
+
+func (b Board) IsCheckmate(c Colour) bool {
+	return b.IsCheck(c) && !b.hasLegalMoves(c)
+}
+
+func (b Board) IsStalemate(c Colour) bool {
+	return !b.IsCheck(c) && !b.hasLegalMoves(c)
 }

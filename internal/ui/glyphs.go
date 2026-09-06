@@ -9,9 +9,33 @@ type glyphSet struct {
 
 var glyphTypes = []glyphSet{
 	{
-		name:         "basic",
+		name:         "minimal",
 		sqDarkEmpty:  " ",
 		sqLightEmpty: " ",
+		squareChars: map[SQType]struct{ open, close string }{
+			sqCursor:   {"<", ">"},
+			sqSelected: {"(", ")"},
+			sqLegal:    {"{", "}"},
+			sqLight:    {"[", "]"},
+			sqDark:     {"[", "]"},
+		},
+	},
+	{
+		name:         "contrast",
+		sqDarkEmpty:  ".",
+		sqLightEmpty: "#",
+		squareChars: map[SQType]struct{ open, close string }{
+			sqCursor:   {"<", ">"},
+			sqSelected: {"(", ")"},
+			sqLegal:    {"{", "}"},
+			sqLight:    {"[", "]"},
+			sqDark:     {"[", "]"},
+		},
+	},
+	{
+		name:         "full",
+		sqDarkEmpty:  "#",
+		sqLightEmpty: "#",
 		squareChars: map[SQType]struct{ open, close string }{
 			sqCursor:   {"<", ">"},
 			sqSelected: {"(", ")"},

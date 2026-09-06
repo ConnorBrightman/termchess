@@ -1,6 +1,7 @@
 package ui
 
 type pieceStyle struct {
+	name    string
 	wPawn   string
 	wKnight string
 	wBishop string
@@ -15,8 +16,9 @@ type pieceStyle struct {
 	bKing   string
 }
 
-var pieceStyles = map[string]pieceStyle{
-	"notation": {
+var pieceStyles = []pieceStyle{
+	{
+		name:    "notation",
 		wPawn:   "P",
 		wKnight: "N",
 		wBishop: "B",
@@ -30,7 +32,8 @@ var pieceStyles = map[string]pieceStyle{
 		bQueen:  "q",
 		bKing:   "k",
 	},
-	"notation-matched": {
+	{
+		name:    "notation-balanced",
 		wPawn:   "P",
 		wKnight: "N",
 		wBishop: "B",
@@ -44,7 +47,8 @@ var pieceStyles = map[string]pieceStyle{
 		bQueen:  "Q",
 		bKing:   "K",
 	},
-	"icons": {
+	{
+		name:    "icons",
 		wPawn:   "♙",
 		wKnight: "♘",
 		wBishop: "♗",
@@ -58,7 +62,8 @@ var pieceStyles = map[string]pieceStyle{
 		bQueen:  "♛",
 		bKing:   "♚",
 	},
-	"icons-outlined": {
+	{
+		name:    "icons-outlined",
 		wPawn:   "♙",
 		wKnight: "♘",
 		wBishop: "♗",
@@ -72,7 +77,8 @@ var pieceStyles = map[string]pieceStyle{
 		bQueen:  "♕",
 		bKing:   "♔",
 	},
-	"icons-filled": {
+	{
+		name:    "icons-filled",
 		wPawn:   "♟",
 		wKnight: "♞",
 		wBishop: "♝",

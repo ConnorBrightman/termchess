@@ -1,13 +1,15 @@
 package ui
 
 type glyphSet struct {
+	name         string
 	sqDarkEmpty  string
 	sqLightEmpty string
 	squareChars  map[SQType]struct{ open, close string }
 }
 
-var glyphTypes = map[string]glyphSet{
-	"notation": {
+var glyphTypes = []glyphSet{
+	{
+		name:         "basic",
 		sqDarkEmpty:  " ",
 		sqLightEmpty: " ",
 		squareChars: map[SQType]struct{ open, close string }{

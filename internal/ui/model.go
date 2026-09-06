@@ -17,6 +17,8 @@ type model struct {
 	turn         chess.Colour
 	message      string
 	themeNo      int
+	glyphsNo     int
+	piecesNo     int
 	theme        pallette
 	glyphs       glyphSet
 	pieces       pieceStyle
@@ -28,9 +30,11 @@ func initialModel() model {
 		hasSelection: false,
 		turn:         chess.White,
 		themeNo:      0,
+		glyphsNo:     0,
+		piecesNo:     0,
 		theme:        themes[0],
-		glyphs:       glyphTypes["notation"],
-		pieces:       pieceStyles["notation-matched"],
+		glyphs:       glyphTypes[0],
+		pieces:       pieceStyles[0],
 	}
 }
 
@@ -48,6 +52,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "t":
 			m.nextTheme()
+		case "p":
+			m.nextPieces()
+		case "g":
+			m.nextGlyphs()
 		case "up", "k", "w":
 			if m.cursor.Rank < 7 {
 				m.cursor.Rank++
@@ -89,6 +97,8 @@ func (m model) View() tea.View {
 	s := "Welcome to TermChess\n"
 
 	s += fmt.Sprintf("Theme [%s]\n", m.theme.name)
+	s += fmt.Sprintf("Pieces [%s]\n", m.pieces.name)
+	s += fmt.Sprintf("Glyphs [%s]\n", m.glyphs.name)
 
 	switch {
 	case m.board.IsCheckmate(m.turn):
@@ -238,6 +248,45 @@ func (m *model) handleSelection() {
 	}
 }
 
+func (m *model) setTheme(i int) {
+	m.themeNo = i
+	m.theme = themes[m.themeNo]
+}
+func (m *model) nextTheme() {
+	i := m.themeNo + 1
+	if i < len(themes) {
+		m.setTheme(i)
+	} else {
+		m.setTheme(0)
+	}
+}
+
+func (m *model) setGlyphs(i int) {
+	m.glyphsNo = i
+	m.glyphs = glyphTypes[m.glyphsNo]
+}
+func (m *model) nextGlyphs() {
+	i := m.glyphsNo + 1
+	if i < len(glyphTypes) {
+		m.setGlyphs(i)
+	} else {
+		m.setGlyphs(0)
+	}
+}
+
+func (m *model) setPieces(i int) {
+	m.piecesNo = i
+	m.pieces = pieceStyles[m.piecesNo]
+}
+func (m *model) nextPieces() {
+	i := m.piecesNo + 1
+	if i < len(pieceStyles) {
+		m.setPieces(i)
+	} else {
+		m.setPieces(0)
+	}
+}
+
 func (m model) setPieceLooks(p chess.Piece) string {
 	ps := p.String()
 	switch ps {
@@ -267,17 +316,4 @@ func (m model) setPieceLooks(p chess.Piece) string {
 		ps = m.pieces.bKing
 	}
 	return ps
-}
-
-func (m *model) setTheme(i int) {
-	m.themeNo = i
-	m.theme = themes[m.themeNo]
-}
-func (m *model) nextTheme() {
-	i := m.themeNo + 1
-	if i < len(themes) {
-		m.setTheme(i)
-	} else {
-		m.setTheme(0)
-	}
 }

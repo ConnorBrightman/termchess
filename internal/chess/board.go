@@ -54,6 +54,9 @@ func (b Board) MakeMove(m Move) Board {
 	b.squares[m.To.Rank][m.To.File] = from
 	b.squares[m.From.Rank][m.From.File] = makePiece(Empty, Black)
 
+	// Promotes a pawn if on the promotion square
+	b = b.PromotePawn(m.To)
+
 	return b
 }
 
@@ -256,4 +259,16 @@ func (b Board) IsCheckmate(c Colour) bool {
 
 func (b Board) IsStalemate(c Colour) bool {
 	return !b.IsCheck(c) && !b.hasLegalMoves(c)
+}
+
+func (b Board) PromotePawn(sq Square) Board {
+	p := b.PieceAt(sq)
+	if p.PieceType() != Pawn {
+		return b
+	}
+	if p.pColour == White && sq.Rank != Rank8 || p.pColour == Black && sq.Rank != Rank1 {
+		return b
+	}
+	b.squares[sq.Rank][sq.File] = makePiece(Queen, p.pColour)
+	return b
 }

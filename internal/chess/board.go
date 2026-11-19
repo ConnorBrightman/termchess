@@ -7,7 +7,12 @@ import (
 
 type Board struct {
 	// [Rank] [File]
-	squares [8][8]Piece
+	squares     [8][8]Piece
+	castleMoves castleRights
+}
+
+type castleRights struct {
+	whiteKingside, whiteQueenside, blackKingside, blackQueenside bool
 }
 
 // PieceAt returns the [Piece] at a square
@@ -32,6 +37,7 @@ func StartPosition() Board {
 		b.squares[7][i] = makePiece(backRank[i], Black)
 		b.squares[6][i] = makePiece(Pawn, Black)
 	}
+	b.castleMoves = castleRights{true, true, true, true}
 	return b
 }
 
@@ -50,12 +56,56 @@ func (b Board) String() string {
 
 // MakeMove moves a [Piece] from one square to another
 func (b Board) MakeMove(m Move) Board {
+	b = b.checkCastlingRights(m)
 	from := b.squares[m.From.Rank][m.From.File]
 	b.squares[m.To.Rank][m.To.File] = from
 	b.squares[m.From.Rank][m.From.File] = makePiece(Empty, Black)
 
 	// Promotes a pawn if on the promotion square
 	b = b.PromotePawn(m.To)
+
+	return b
+}
+
+func (b Board) checkCastlingRights(m Move) Board {
+	from := b.squares[m.From.Rank][m.From.File]
+
+	if from.PieceType() == King {
+		if from.PieceColour() == White {
+			b.castleMoves.whiteKingside = false
+			b.castleMoves.whiteQueenside = false
+		} else {
+			b.castleMoves.blackKingside = false
+			b.castleMoves.blackQueenside = false
+		}
+	} else if from.PieceType() == Rook {
+		if from.PieceColour() == White {
+			if m.From.File == FileA {
+				b.castleMoves.whiteQueenside = false
+			} else if m.From.File == FileH {
+				b.castleMoves.whiteKingside = false
+			}
+		} else {
+			if m.From.File == FileA {
+				b.castleMoves.blackQueenside = false
+			} else if m.From.File == FileH {
+				b.castleMoves.blackKingside = false
+			}
+		}
+	}
+
+	if m.To == (Square{Rank1, FileA}) {
+		b.castleMoves.whiteQueenside = false
+	}
+	if m.To == (Square{Rank1, FileH}) {
+		b.castleMoves.whiteKingside = false
+	}
+	if m.To == (Square{Rank8, FileA}) {
+		b.castleMoves.blackQueenside = false
+	}
+	if m.To == (Square{Rank8, FileH}) {
+		b.castleMoves.blackKingside = false
+	}
 
 	return b
 }
